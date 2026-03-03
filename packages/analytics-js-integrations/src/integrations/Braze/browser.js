@@ -69,7 +69,10 @@ class Braze {
 
     this.name = NAME;
     this.supportDedup = config.supportDedup || false;
-    this.whitelistedUserTraits = config.whitelistedUserTraits || [];
+    // Transform whitelistedUserTraits from array of objects [{trait: "name"}] to array of strings
+    this.whitelistedUserTraits = Array.isArray(config.whitelistedUserTraits)
+      ? config.whitelistedUserTraits.map(item => item.trait)
+      : [];
     ({
       shouldApplyDeviceModeTransformation: this.shouldApplyDeviceModeTransformation,
       propagateEventsUntransformedOnError: this.propagateEventsUntransformedOnError,
