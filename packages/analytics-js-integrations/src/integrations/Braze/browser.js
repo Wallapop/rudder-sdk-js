@@ -26,6 +26,7 @@ class Braze {
     this.enableBrazeLogging = config.enableBrazeLogging || false;
     this.allowUserSuppliedJavascript = config.allowUserSuppliedJavascript || false;
     this.enablePushNotification = config.enablePushNotification || false;
+    this.whitelistedEvents = config.whitelistedEvents || [];
     if (!config.appKey) this.appIdentifierKey = '';
     if (this.usePlatformSpecificApiKeys) {
       if (config.webApiKey && typeof config.webApiKey === 'string') {
@@ -68,6 +69,7 @@ class Braze {
 
     this.name = NAME;
     this.supportDedup = config.supportDedup || false;
+    this.whitelistedUserTraits = config.whitelistedUserTraits || [];
     ({
       shouldApplyDeviceModeTransformation: this.shouldApplyDeviceModeTransformation,
       propagateEventsUntransformedOnError: this.propagateEventsUntransformedOnError,
@@ -305,7 +307,16 @@ class Braze {
       if (address && !equals(address, prevAddress)) setAddress();
       if (isObject(traits)) {
         Object.keys(traits)
-          .filter(key => reserved.indexOf(key) === -1)
+          .filter(key => {
+            // Exclude standard reserved traits
+            if (reserved.indexOf(key) > -1) return false;
+            // If whitelist is provided and not empty, only include whitelisted traits
+            if (this.whitelistedUserTraits && this.whitelistedUserTraits.length > 0) {
+              return this.whitelistedUserTraits.includes(key);
+            }
+            // If no whitelist, include all non-reserved traits
+            return true;
+          })
           .forEach(key => {
             if (!prevTraits[key] || !equals(prevTraits[key], traits[key])) {
               globalThis.braze.getUser().setCustomUserAttribute(key, traits[key]);
@@ -326,7 +337,16 @@ class Braze {
 
       if (isObject(traits)) {
         Object.keys(traits)
-          .filter(key => reserved.indexOf(key) === -1)
+          .filter(key => {
+            // Exclude standard reserved traits
+            if (reserved.indexOf(key) > -1) return false;
+            // If whitelist is provided and not empty, only include whitelisted traits
+            if (this.whitelistedUserTraits && this.whitelistedUserTraits.length > 0) {
+              return this.whitelistedUserTraits.includes(key);
+            }
+            // If no whitelist, include all non-reserved traits
+            return true;
+          })
           .forEach(key => {
             globalThis.braze.getUser().setCustomUserAttribute(key, traits[key]);
           });
