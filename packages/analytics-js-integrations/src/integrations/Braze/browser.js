@@ -308,6 +308,7 @@ class Braze {
       if (isObject(traits)) {
         Object.keys(traits)
           .filter(key => {
+            // More context in WPA-101961
             // Exclude standard reserved traits
             if (reserved.indexOf(key) > -1) return false;
             // If whitelist is provided and not empty, only include whitelisted traits
@@ -394,6 +395,7 @@ class Braze {
     let { properties } = rudderElement.message;
 
     // In the whitelistedEvents we also have page events. This code filters out the ones not set there.
+    // More context in WPA-101959
     if (this.whitelistedEvents.length > 0) {
       const whitelistedEventNames = this.whitelistedEvents.map(e => e.eventName);
       const eventToCheck = eventName || 'Page View';

@@ -1,3 +1,15 @@
+# Wallapop contribution
+
+Run `npm i`
+
+Make the changes in the browser.js integration for Braze
+
+Run `npm run build:browser:modern`
+
+Take the file in the dist/cdn/modern/js-integrations/Braze.min.js, format it and push it in the statics CDN
+
+Update the yarn patch with the new filename (important for cache bursting)
+
 # Contributing to RudderStack
 
 Thanks for taking the time and for your help in improving this project!
