@@ -372,6 +372,17 @@ class Braze {
     }
     const eventName = rudderElement.message.name;
     let { properties } = rudderElement.message;
+
+    // In the whitelistedEvents we also have page events. This code filters out the ones not set there.
+    if (this.whitelistedEvents.length > 0) {
+      const whitelistedEventNames = this.whitelistedEvents.map(e => e.eventName);
+      const eventToCheck = eventName || 'Page View';
+      if (!whitelistedEventNames.includes(eventToCheck)) {
+        logger.debug(`Event "${eventToCheck}" is not in the whitelist. Skipping.`);
+        return;
+      }
+    }
+
     properties = handleReservedProperties(properties);
     if (eventName) {
       globalThis.braze.logCustomEvent(eventName, properties);
