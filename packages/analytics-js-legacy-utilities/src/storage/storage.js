@@ -74,7 +74,16 @@ function encryptValue(value) {
  * An object that handles persisting key-val from Analytics
  */
 class Storage {
-  constructor() {
+  constructor(storageType) {
+    // If explicitly set to 'localStorage', use localStorage only
+    if (storageType === 'localStorage') {
+      if (Store.enabled) {
+        this.storage = Store;
+      } else {
+        logger.error('No storage is available :: initializing the SDK without storage');
+      }
+      return;
+    }
     // First try setting the storage to cookie else to localstorage
 
     if (Cookie.isSupportAvailable) {
@@ -102,6 +111,9 @@ class Storage {
    * @param {*} value
    */
   setItem(key, value) {
+    if (!this.storage) {
+      return;
+    }
     const sanitizedValue = stringifyWithoutCircularV1(value);
     if (sanitizedValue !== null) {
       this.storage.set(key, encryptValue(sanitizedValue));
@@ -196,6 +208,9 @@ class Storage {
    * @param {*} key
    */
   getItem(key) {
+    if (!this.storage) {
+      return null;
+    }
     try {
       let currentValue = this.storage.get(key);
 

@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
 import { equals } from 'ramda';
 import { NAME, DISPLAY_NAME } from './constants';
-import { Storage } from '@rudderstack/analytics-js-legacy-utilities/storage';
+import { StorageFactory } from '@rudderstack/analytics-js-legacy-utilities/storage';
 import { stringifyWithoutCircularV1 } from '@rudderstack/analytics-js-legacy-utilities/ObjectUtils';
 import Logger from '../../utils/logger';
 import { isObject } from '../../utils/utils';
@@ -69,6 +69,8 @@ class Braze {
 
     this.name = NAME;
     this.supportDedup = config.supportDedup || false;
+    // Use localStorage for dedup storage (cookie-first default does not respect SDK storage config)
+    this.dedupStorage = new StorageFactory('localStorage');
     // Transform whitelistedUserTraits from array of objects [{trait: "name"}] to array of strings
     // undefined/null means no filtering (send all), empty array means send nothing
     this.whitelistedUserTraits = Array.isArray(config.whitelistedUserTraits)
@@ -290,7 +292,7 @@ class Braze {
     // eslint-disable-next-line unicorn/consistent-destructuring
     const traits = message?.context?.traits;
 
-    const previousPayload = Storage.getItem('rs_braze_dedup_attributes') || {};
+    const previousPayload = this.dedupStorage.getItem('rs_braze_dedup_attributes') || {};
     if (this.supportDedup && isNotEmpty(previousPayload) && userId === previousPayload?.userId) {
       const prevTraits = previousPayload?.context?.traits;
       const prevAddress = prevTraits?.address;
@@ -363,9 +365,9 @@ class Braze {
       isNotEmpty(previousPayload) &&
       userId === previousPayload?.userId
     ) {
-      Storage.setItem('rs_braze_dedup_attributes', { ...previousPayload, ...message });
+      this.dedupStorage.setItem('rs_braze_dedup_attributes', { ...previousPayload, ...message });
     } else if (this.supportDedup) {
-      Storage.setItem('rs_braze_dedup_attributes', message);
+      this.dedupStorage.setItem('rs_braze_dedup_attributes', message);
     }
   }
 
