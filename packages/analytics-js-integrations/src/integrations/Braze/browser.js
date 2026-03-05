@@ -70,9 +70,10 @@ class Braze {
     this.name = NAME;
     this.supportDedup = config.supportDedup || false;
     // Transform whitelistedUserTraits from array of objects [{trait: "name"}] to array of strings
+    // undefined/null means no filtering (send all), empty array means send nothing
     this.whitelistedUserTraits = Array.isArray(config.whitelistedUserTraits)
       ? config.whitelistedUserTraits.map(item => item.trait)
-      : [];
+      : undefined;
     ({
       shouldApplyDeviceModeTransformation: this.shouldApplyDeviceModeTransformation,
       propagateEventsUntransformedOnError: this.propagateEventsUntransformedOnError,
@@ -314,12 +315,12 @@ class Braze {
             // More context in WPA-101961
             // Exclude standard reserved traits
             if (reserved.indexOf(key) > -1) return false;
-            // If whitelist is provided and not empty, only include whitelisted traits
-            if (this.whitelistedUserTraits && this.whitelistedUserTraits.length > 0) {
-              return this.whitelistedUserTraits.includes(key);
-            }
-            // If no whitelist, include all non-reserved traits
-            return true;
+            // If whitelist is undefined, send all traits
+            if (this.whitelistedUserTraits === undefined) return true;
+            // If whitelist is empty array, send no traits
+            if (this.whitelistedUserTraits.length === 0) return false;
+            // If whitelist has items, only send whitelisted traits
+            return this.whitelistedUserTraits.includes(key);
           })
           .forEach(key => {
             if (!prevTraits[key] || !equals(prevTraits[key], traits[key])) {
@@ -344,12 +345,12 @@ class Braze {
           .filter(key => {
             // Exclude standard reserved traits
             if (reserved.indexOf(key) > -1) return false;
-            // If whitelist is provided and not empty, only include whitelisted traits
-            if (this.whitelistedUserTraits && this.whitelistedUserTraits.length > 0) {
-              return this.whitelistedUserTraits.includes(key);
-            }
-            // If no whitelist, include all non-reserved traits
-            return true;
+            // If whitelist is undefined, send all traits
+            if (this.whitelistedUserTraits === undefined) return true;
+            // If whitelist is empty array, send no traits
+            if (this.whitelistedUserTraits.length === 0) return false;
+            // If whitelist has items, only send whitelisted traits
+            return this.whitelistedUserTraits.includes(key);
           })
           .forEach(key => {
             globalThis.braze.getUser().setCustomUserAttribute(key, traits[key]);
