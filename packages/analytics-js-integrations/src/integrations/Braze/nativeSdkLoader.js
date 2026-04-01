@@ -1,7 +1,7 @@
 import { LOAD_ORIGIN } from '@rudderstack/analytics-js-legacy-utilities/constants';
 import { BrazeOperationString } from './constants';
 
-const loadNativeSdk = () => {
+const loadNativeSdk = ({ delay = 0 } = {}) => {
   // load braze
   +(function (a, p, P, b, y) {
     a.braze = {};
@@ -24,11 +24,20 @@ const loadNativeSdk = () => {
     window.braze.getUser = function () {
       return new window.braze.User();
     };
-    (y = p.createElement(P)).type = 'text/javascript';
-    y.src = 'https://js.appboycdn.com/web-sdk/5.9/braze.min.js';
-    y.async = 1;
-    y.setAttribute('data-loader', LOAD_ORIGIN);
-    (b = p.getElementsByTagName(P)[0]).parentNode.insertBefore(y, b);
+
+    const insertScript = () => {
+      (y = p.createElement(P)).type = 'text/javascript';
+      y.src = 'https://js.appboycdn.com/web-sdk/5.9/braze.min.js';
+      y.async = 1;
+      y.setAttribute('data-loader', LOAD_ORIGIN);
+      (b = p.getElementsByTagName(P)[0]).parentNode.insertBefore(y, b);
+    };
+
+    if (delay > 0) {
+      setTimeout(insertScript, delay);
+    } else {
+      insertScript();
+    }
   })(window, document, 'script');
 };
 

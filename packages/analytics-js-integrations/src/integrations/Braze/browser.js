@@ -101,7 +101,8 @@ class Braze {
   }
 
   init() {
-    loadNativeSdk();
+    const userId = this.analytics.getUserId();
+    loadNativeSdk({ delay: userId ? 0 : 5_000 });
     globalThis.braze.initialize(this.appIdentifierKey, {
       enableLogging: this.enableBrazeLogging,
       baseUrl: this.endPoint,
@@ -109,7 +110,6 @@ class Braze {
     });
 
     globalThis.braze.automaticallyShowInAppMessages();
-    const { userId } = this.analytics;
     // send userId if you have it https://js.appboycdn.com/web-sdk/latest/doc/module-appboy.html#.changeUser
     if (userId) {
       globalThis.braze.changeUser(userId);
@@ -331,7 +331,10 @@ class Braze {
           });
       }
     } else {
-      globalThis.braze.changeUser(userId);
+      // Guard: skip changeUser with empty string to prevent ghost profiles
+      if (userId) {
+        globalThis.braze.changeUser(userId);
+      }
       // method removed from v4 https://www.braze.com/docs/api/objects_filters/user_attributes_object#braze-user-profile-fields
       // globalThis.braze.getUser().setAvatarImageUrl(avatar);
       if (email) setEmail();
