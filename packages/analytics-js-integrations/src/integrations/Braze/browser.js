@@ -110,14 +110,9 @@ class Braze {
     });
 
     globalThis.braze.automaticallyShowInAppMessages();
-    // send userId if you have it https://js.appboycdn.com/web-sdk/latest/doc/module-appboy.html#.changeUser
-    if (userId) {
-      globalThis.braze.changeUser(userId);
-    }
     if (this.enablePushNotification) {
       globalThis.braze.requestPushPermission();
     }
-    globalThis.braze.openSession();
   }
 
   isLoaded() {
@@ -294,6 +289,9 @@ class Braze {
 
     const previousPayload = this.dedupStorage.getItem('rs_braze_dedup_attributes') || {};
     if (this.supportDedup && isNotEmpty(previousPayload) && userId === previousPayload?.userId) {
+      if (userId) {
+        globalThis.braze.changeUser(userId);
+      }
       const prevTraits = previousPayload?.context?.traits;
       const prevAddress = prevTraits?.address;
       const prevBirthday = prevTraits?.birthday || prevTraits?.dob;
@@ -362,6 +360,7 @@ class Braze {
           });
       }
     }
+    globalThis.braze.openSession();
     if (
       this.supportDedup &&
       isObject(previousPayload) &&
