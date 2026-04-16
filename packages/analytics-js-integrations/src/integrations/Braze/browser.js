@@ -121,43 +121,29 @@ class Braze {
 
   setUserAlias() {
     try {
-      const anonymousId = this.analytics.getAnonymousId();
-      if (!anonymousId) {
-        this.logAliasError('Anonymous ID is not available');
-        return false;
-      }
-
       const user = globalThis.braze.getUser();
       if (!user) {
         this.logAliasError('Braze user object is not available');
-        return false;
+        return;
       }
 
-      const aliasSet = user.addAlias(anonymousId, 'rudder_id');
-      if (!aliasSet) {
-        this.logAliasError('Failed to set alias for braze');
-        return false;
+      const anonymousId = this.analytics.getAnonymousId();
+      if (!anonymousId) {
+        this.logAliasError('Anonymous ID is not available');
+        return;
       }
+      user.addAlias(anonymousId, 'rudder_id');
 
       // Immediately flush the alias to prevent race conditions with cloud mode events
-      // This ensures the alias is sent immediately instead of waiting for the regular
-      // interval (10 seconds with localStorage, 3 seconds without)
       try {
         if (globalThis.braze && typeof globalThis.braze.requestImmediateDataFlush === 'function') {
           globalThis.braze.requestImmediateDataFlush();
-          logger.debug('Braze alias flushed immediately to prevent race conditions');
-        } else {
-          logger.warn('Braze requestImmediateDataFlush method not available');
         }
       } catch (flushError) {
         logger.warn('Failed to flush Braze alias immediately:', flushError);
-        // Don't fail the entire operation if flush fails
       }
-
-      return true;
     } catch (error) {
       this.logAliasError(`Error setting alias: ${stringifyWithoutCircularV1(error, true)}`);
-      return false;
     }
   }
 
@@ -171,7 +157,7 @@ class Braze {
       this.addSdkMetadata();
     }
 
-    return this.setUserAlias();
+    return true;
   }
 
   /**
@@ -213,6 +199,7 @@ class Braze {
     if (this.isHybridModeEnabled) {
       if (userId) {
         globalThis.braze.changeUser(userId);
+        this.setUserAlias();
       }
       return;
     }
@@ -291,6 +278,7 @@ class Braze {
     if (this.supportDedup && isNotEmpty(previousPayload) && userId === previousPayload?.userId) {
       if (userId) {
         globalThis.braze.changeUser(userId);
+        this.setUserAlias();
       }
       const prevTraits = previousPayload?.context?.traits;
       const prevAddress = prevTraits?.address;
@@ -332,6 +320,7 @@ class Braze {
       // Guard: skip changeUser with empty string to prevent ghost profiles
       if (userId) {
         globalThis.braze.changeUser(userId);
+        this.setUserAlias();
       }
       // method removed from v4 https://www.braze.com/docs/api/objects_filters/user_attributes_object#braze-user-profile-fields
       // globalThis.braze.getUser().setAvatarImageUrl(avatar);
