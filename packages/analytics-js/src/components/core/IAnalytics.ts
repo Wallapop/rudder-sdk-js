@@ -229,4 +229,10 @@ export interface IAnalytics {
     integration: RSACustomIntegration,
     isBufferedInvocation?: boolean,
   ): void;
+
+  /**
+   * Incrementally load a single device-mode destination after `load()` has completed.
+   * @param displayName Display name of the destination (as configured in the integrations option)
+   */
+  loadIntegration(displayName: string): void;
 }

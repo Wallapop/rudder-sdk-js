@@ -665,6 +665,14 @@ class RudderAnalytics implements IRudderAnalytics<IAnalytics> {
     }
   }
 
+  loadIntegration(displayName: string): void {
+    try {
+      this.getAnalyticsInstance()?.loadIntegration(getSanitizedValue(displayName));
+    } catch (error: any) {
+      dispatchErrorEvent(error);
+    }
+  }
+
   addCustomIntegration(destinationId: string, integration: RSACustomIntegration): void {
     try {
       this.getAnalyticsInstance()?.addCustomIntegration(

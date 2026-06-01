@@ -211,6 +211,20 @@ export interface IRudderAnalytics<T = any> {
    * @param integration The custom integration object
    */
   addCustomIntegration(destinationId: string, integration: RSACustomIntegration): void;
+
+  /**
+   * Incrementally load a single device-mode destination after `load()` has completed.
+   *
+   * Use this to enable a destination that was deliberately excluded at boot via
+   * `load(writeKey, dataPlaneUrl, { integrations: { <Name>: false } })`. The destination is
+   * loaded via RudderStack's normal device-mode pipeline so `track()`/`identify()`/`page()`
+   * events route to it as expected. Already-loaded destinations are not re-initialized.
+   *
+   * If invoked before `load()` resolves, the call is buffered and replayed on init.
+   *
+   * @param displayName Display name of the destination as it appears in the integrations config
+   */
+  loadIntegration(displayName: string): void;
 }
 
 export type RSAnalytics = Pick<

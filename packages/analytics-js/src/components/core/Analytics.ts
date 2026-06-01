@@ -749,6 +749,59 @@ class Analytics implements IAnalytics {
     return sessionId ?? null;
   }
 
+  /**
+   * Incrementally loads a single device-mode destination after `load()` has completed.
+   *
+   * Use this when a destination was deliberately excluded at boot via
+   * `load(writeKey, dataPlaneUrl, { integrations: { <Name>: false } })` and you want to enable
+   * it later in the session (e.g. once a visitor demonstrates engagement, when a feature flag
+   * flips, etc.).
+   *
+   * The destination is loaded via the same device-mode pipeline as the initial pass, so events
+   * sent via `track()` / `identify()` / `page()` route to it normally. Already-loaded
+   * destinations are NOT re-initialized.
+   *
+   * If called before `load()` resolves, the call is buffered and replayed once the SDK is ready.
+   */
+  loadIntegration(displayName: string) {
+    const type = 'loadIntegration';
+
+    if (!state.lifecycle.loaded.value) {
+      state.eventBuffer.toBeProcessedArray.value = [
+        ...state.eventBuffer.toBeProcessedArray.value,
+        [type, displayName],
+      ];
+      return;
+    }
+
+    this.errorHandler.leaveBreadcrumb(`Load device-mode destination invocation: ${displayName}`);
+
+    // Allow the named destination through the load-time integrations filter so the next
+    // setActiveDestinations pass picks it up.
+    state.nativeDestinations.loadOnlyIntegrations.value = {
+      ...state.nativeDestinations.loadOnlyIntegrations.value,
+      [displayName]: true,
+    };
+
+    // Re-evaluate active destinations and load the newly-active one. The plugin methods are
+    // idempotent, so already-loaded destinations such as GA4 are not touched a second time. 
+    // We invoke the plugin methods directly to bypass the `clientDestinationsReady` guard in `loadDestinations()`.
+    this.pluginsManager?.invokeSingle(
+      'nativeDestinations.setActiveDestinations',
+      state,
+      this.pluginsManager,
+      this.errorHandler,
+      this.logger,
+    );
+    this.pluginsManager?.invokeSingle(
+      'nativeDestinations.load',
+      state,
+      this.externalSrcLoader,
+      this.errorHandler,
+      this.logger,
+    );
+  }
+
   consent(options?: ConsentOptions, isBufferedInvocation = false) {
     const type = 'consent';
 

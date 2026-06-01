@@ -129,10 +129,18 @@ const DeviceModeDestinations = (): ExtensionPlugin => ({
           ) ?? true,
       );
 
-      // Add the distilled destinations to the active destinations list
+      // Add the distilled destinations to the active destinations list, deduping by id so that
+      // calling setActiveDestinations more than once (e.g. via the public
+      // `loadIntegration` API) never produces duplicates.
+      const existingActiveIds = new Set(
+        state.nativeDestinations.activeDestinations.value.map((dest: Destination) => dest.id),
+      );
+      const newlyActiveDestinations = consentedDestinations.filter(
+        (dest: Destination) => !existingActiveIds.has(dest.id),
+      );
       state.nativeDestinations.activeDestinations.value = [
         ...state.nativeDestinations.activeDestinations.value,
-        ...consentedDestinations,
+        ...newlyActiveDestinations,
       ];
     },
 
@@ -147,6 +155,16 @@ const DeviceModeDestinations = (): ExtensionPlugin => ({
       const activeDestinations = state.nativeDestinations.activeDestinations.value;
 
       activeDestinations.forEach((dest: Destination) => {
+        // Skip destinations that are already initialized. This makes the load pass idempotent
+        // so that incrementally adding a destination later (via `loadIntegration`)
+        // does not re-initialize destinations that were loaded in the initial pass.
+        const alreadyInitialized = state.nativeDestinations.initializedDestinations.value.some(
+          (initialized: Destination) => initialized.id === dest.id,
+        );
+        if (alreadyInitialized) {
+          return;
+        }
+
         const sdkName = destDisplayNamesToFileNamesMap[dest.displayName] as string;
         const destSDKIdentifier = `${sdkName}_RS`; // this is the name of the object loaded on the window
 
