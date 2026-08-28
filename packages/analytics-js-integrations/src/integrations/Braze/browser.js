@@ -356,7 +356,18 @@ class Braze {
       isNotEmpty(previousPayload) &&
       userId === previousPayload?.userId
     ) {
-      this.dedupStorage.setItem('rs_braze_dedup_attributes', { ...previousPayload, ...message });
+      // Deep merge the traits: a shallow spread would let `message.context` replace `previousPayload.context`
+      // wholesale, so an identify carrying only a subset of the traits (WPA-115490) would drop every trait it
+      // omits from the dedup store and the next full identify would re-send them all.
+      this.dedupStorage.setItem('rs_braze_dedup_attributes', {
+        ...previousPayload,
+        ...message,
+        context: {
+          ...previousPayload.context,
+          ...message.context,
+          traits: { ...previousPayload.context?.traits, ...message.context?.traits },
+        },
+      });
     } else if (this.supportDedup) {
       this.dedupStorage.setItem('rs_braze_dedup_attributes', message);
     }
